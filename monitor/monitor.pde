@@ -1,8 +1,14 @@
+/*
+ * 🎄 🎁 🎅 🎁 🎄
+ */
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+// philosophers
 final int N = 5;
+
+// state
 final int HUNGRY = 0;
 final int EATING = 1;
 final int THINKING = 2;
@@ -13,7 +19,7 @@ public class Monitor {
   public Condition[] conditions;
 
   public int n;
-  public int[] state;
+  public int[] status;
   public int[] philosophers;
 
   public Monitor(int N) {
@@ -22,20 +28,22 @@ public class Monitor {
 
     lock = new ReentrantLock();
     conditions = new Condition[N];
-    state = new int[N];
+    status = new int[N];
     philosophers = new int[N];
 
     for (int i = 0; i < N; i++) {
-      state[i] = THINKING;
+      status[i] = THINKING;
       philosophers[i] = i;
       conditions[i] = lock.newCondition();
     }
   }
 
+  // e.g. {0,1,...,n-1} left(k)->k-1 left(0)->n-1
   public int leftPhilosopher(int philosopherNumber) {
     return (philosopherNumber+(n-1)) % n;
   }
 
+  // e.g. {0,1,...,n-1} right(k)->k+1 right(n-1)->0
   public int rightPhilosopher(int philosopherNumber) {
     return (philosopherNumber+1) % n;
   }
@@ -44,13 +52,15 @@ public class Monitor {
 
     lock.lock();
 
-    state[philosopherNumber] = HUNGRY;
 
-    if (state[philosopherNumber] == HUNGRY
-      && state[leftPhilosopher(philosopherNumber)] != EATING
-      && state[rightPhilosopher(philosopherNumber)] != EATING) {
-    } else {
+    // test
+    // It(philosopherNumber) wants to eating.
+    // but it has to wait eating left(right) philosopher.
+    status[philosopherNumber] = HUNGRY;
 
+    if(!( status[philosopherNumber] == HUNGRY
+          && status[leftPhilosopher(philosopherNumber)] != EATING
+        && status[rightPhilosopher(philosopherNumber)] != EATING)){
       try {
         conditions[philosopherNumber].await();
       }
@@ -59,9 +69,9 @@ public class Monitor {
       }
     }
 
-    state[philosopherNumber] = EATING;
-    println("Philosopher", philosopherNumber+1, "takes forks.");
-    println("Philosopher", philosopherNumber+1, "is eating.");
+    status[philosopherNumber] = EATING;
+    println("Philosopher", philosopherNumber, "takes forks.");
+    println("Philosopher", philosopherNumber, "is eating.");
 
     lock.unlock();
   }
@@ -70,17 +80,22 @@ public class Monitor {
 
     lock.lock();
 
-    state[philosopherNumber] = THINKING;
+
+    // test
+    // When this time, left(right) philosopher wants to start eating.
+    // Therefore, it(philosopherNumber) puts down forks and sends a signal.
+    // Finally, it starts thinking.
+    status[philosopherNumber] = THINKING;
 
     int left = leftPhilosopher(philosopherNumber);
     int left2 = leftPhilosopher(left);
-    if (state[left] == HUNGRY && state[left2] != EATING) {
+    if (status[left] == HUNGRY && status[left2] != EATING) {
       conditions[left].signal();
     }
 
     int right = rightPhilosopher(philosopherNumber);
     int right2 = rightPhilosopher(right);
-    if (state[right] == HUNGRY && state[right2] != EATING) {
+    if (status[right] == HUNGRY && status[right2] != EATING) {
       conditions[right].signal();
     }
 
@@ -116,7 +131,7 @@ public class Philosopher implements Runnable {
   }
 
   public void eat() {
-    println("Philosopher", pid+1, "eats.");
+    println("Philosopher", pid, "eats.");
     try {
       Thread.sleep(500); // 500[ms] = 0.5[s]
     }
@@ -131,11 +146,12 @@ void setup() {
   println("Start dinner.");
 
   Philosopher[] philosophers = new Philosopher[N];
-  Monitor monitor = new Monitor(N); // Share this monitor with philosophers.
+  Monitor monitor = new Monitor(N); // Share this Monitor with philosophers.
   for (int i = 0; i < N; i++) {
     philosophers[i] = new Philosopher(i, monitor);
   }
 
+  // You have to enable this code if you want philosopher' to stop eating in finite-time.
   /*
   for (int i = 0; i < N; i++) {
    try {
