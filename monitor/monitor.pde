@@ -13,10 +13,13 @@ final int HUNGRY = 0;
 final int EATING = 1;
 final int THINKING = 2;
 
+// output number
+int lineNumber = 1;
+
 public class Monitor {
 
   public Lock lock;
-  public Condition[] conditions;
+  public Condition conditions;
 
   public int n;
   public int[] status;
@@ -27,14 +30,13 @@ public class Monitor {
     n = N;
 
     lock = new ReentrantLock();
-    conditions = new Condition[N];
+    conditions = lock.newCondition();
     status = new int[N];
     philosophers = new int[N];
 
     for (int i = 0; i < N; i++) {
       status[i] = THINKING;
       philosophers[i] = i;
-      conditions[i] = lock.newCondition();
     }
   }
 
@@ -48,56 +50,66 @@ public class Monitor {
     return (philosopherNumber+1) % n;
   }
 
+  public void test(int philosopherNumber) {
+    if (status[leftPhilosopher(philosopherNumber)] != EATING
+      && status[philosopherNumber] == HUNGRY
+      && status[rightPhilosopher(philosopherNumber)] != EATING) {
+      status[philosopherNumber] = EATING;
+      println("[", millis() / 1000.0, "]", "Philosopher", philosopherNumber, "is eating.");
+    }
+    conditions.signal();
+  }
+
   public void picksUpForks(int philosopherNumber) {
 
     lock.lock();
-    println("Philosopher", philosopherNumber, "tries to taking forks.");
 
     // test
     // It(philosopherNumber) wants to eating.
     // but it has to wait eating left(right) philosopher.
     status[philosopherNumber] = HUNGRY;
+    println("[", millis() / 1000.0, "]", "Philosopher", philosopherNumber, "is hungry.");
 
-    if (!( status[philosopherNumber] == HUNGRY
-      && status[leftPhilosopher(philosopherNumber)] != EATING
-      && status[rightPhilosopher(philosopherNumber)] != EATING)) {
+    test(philosopherNumber);
+    
+    if (status[philosopherNumber] != EATING) {
       try {
-        println("Philosopher", philosopherNumber, "CANNOT taking forks...");
-        conditions[philosopherNumber].await();
+        conditions.await();
       }
       catch(InterruptedException e) {
         e.printStackTrace();
       }
     }
-
-    println("Philosopher", philosopherNumber, "is eating.");
-    status[philosopherNumber] = EATING;
-
     lock.unlock();
   }
 
   public void putsDownForks(int philosopherNumber) {
 
     lock.lock();
-    println("Philosopher", philosopherNumber, "is putting down forks.");
 
     // test
     // When this time, left(right) philosopher wants to start eating.
     // Therefore, it(philosopherNumber) puts down forks and sends a signal.
     // Finally, it starts thinking.
     status[philosopherNumber] = THINKING;
+    println("[", millis() / 1000.0, "]", "Philosopher", philosopherNumber, "is thinking.");
 
+    test(leftPhilosopher(philosopherNumber));
+    test(rightPhilosopher(philosopherNumber));
+
+    /*
     int left = leftPhilosopher(philosopherNumber);
-    int left2 = leftPhilosopher(left);
-    if (status[left] == HUNGRY && status[left2] != EATING) {
-      conditions[left].signal();
-    }
-
-    int right = rightPhilosopher(philosopherNumber);
-    int right2 = rightPhilosopher(right);
-    if (status[right] == HUNGRY && status[right2] != EATING) {
-      conditions[right].signal();
-    }
+     int left2 = leftPhilosopher(left);
+     if (status[left] == HUNGRY && status[left2] != EATING) {
+     conditions.signal();
+     }
+     
+     int right = rightPhilosopher(philosopherNumber);
+     int right2 = rightPhilosopher(right);
+     if (status[right] == HUNGRY && status[right2] != EATING) {
+     conditions.signal();
+     }
+     */
 
     lock.unlock();
   }
@@ -129,19 +141,21 @@ public class Philosopher implements Runnable {
   }
 
   public void eat() {
-    println("Philosopher", pid, "eats.");
+
+    //println("[", millis() / 1000.0, "]", "Philosopher", pid, "eats.");
     try {
-      Thread.sleep(500); // 500[ms] = 0.5[s]
+      Thread.sleep(1000);
     }
     catch(InterruptedException e) {
       e.printStackTrace();
     }
+    //println("[", millis() / 1000.0, "]", "Philosopher", pid, "finished eating.");
   }
 }
 
 void setup() {
 
-  println("Start dinner.");
+  println("[", millis() / 1000.0, "]", "Dinning is started.");
 
   Philosopher[] philosophers = new Philosopher[N];
   Monitor monitor = new Monitor(N); // Share this Monitor with philosophers.
@@ -159,6 +173,6 @@ void setup() {
    e.printStackTrace();
    }
    }
-   println("End dinner.");
+   println("Dinning is ended.");
    */
 }
