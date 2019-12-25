@@ -13,9 +13,6 @@ final int HUNGRY = 0;
 final int EATING = 1;
 final int THINKING = 2;
 
-// output number
-int lineNumber = 1;
-
 public class Monitor {
 
   public Lock lock;
@@ -57,6 +54,7 @@ public class Monitor {
       status[philosopherNumber] = EATING;
       println("[", millis() / 1000.0, "]", "Philosopher", philosopherNumber, "is eating.");
     }
+    // Enable using fork.
     conditions.signal();
   }
 
@@ -65,13 +63,13 @@ public class Monitor {
     lock.lock();
 
     // test
-    // It(philosopherNumber) wants to eating.
-    // but it has to wait eating left(right) philosopher.
+    // Being hungry, it(philosopherNumber) wants to eating.
+    // But it has to wait if left(right) philosopher has already used fork.
     status[philosopherNumber] = HUNGRY;
     println("[", millis() / 1000.0, "]", "Philosopher", philosopherNumber, "is hungry.");
 
     test(philosopherNumber);
-    
+
     if (status[philosopherNumber] != EATING) {
       try {
         conditions.await();
@@ -87,29 +85,13 @@ public class Monitor {
 
     lock.lock();
 
-    // test
-    // When this time, left(right) philosopher wants to start eating.
-    // Therefore, it(philosopherNumber) puts down forks and sends a signal.
-    // Finally, it starts thinking.
+    // It(philosopherNumber) wants to start thinking.
+    // Therefore, It(philosopherNumber) sends a signal to left(right) philosopher.
     status[philosopherNumber] = THINKING;
     println("[", millis() / 1000.0, "]", "Philosopher", philosopherNumber, "is thinking.");
 
     test(leftPhilosopher(philosopherNumber));
     test(rightPhilosopher(philosopherNumber));
-
-    /*
-    int left = leftPhilosopher(philosopherNumber);
-     int left2 = leftPhilosopher(left);
-     if (status[left] == HUNGRY && status[left2] != EATING) {
-     conditions.signal();
-     }
-     
-     int right = rightPhilosopher(philosopherNumber);
-     int right2 = rightPhilosopher(right);
-     if (status[right] == HUNGRY && status[right2] != EATING) {
-     conditions.signal();
-     }
-     */
 
     lock.unlock();
   }
@@ -142,14 +124,12 @@ public class Philosopher implements Runnable {
 
   public void eat() {
 
-    //println("[", millis() / 1000.0, "]", "Philosopher", pid, "eats.");
     try {
       Thread.sleep(1000);
     }
     catch(InterruptedException e) {
       e.printStackTrace();
     }
-    //println("[", millis() / 1000.0, "]", "Philosopher", pid, "finished eating.");
   }
 }
 
