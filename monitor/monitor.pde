@@ -38,12 +38,12 @@ public class Monitor {
     }
   }
 
-  // e.g. {0,1,...,n-1} left(k)->k-1 left(0)->n-1
+  // e.g. {0,1,...,n-1} left(k)->k-1, left(0)->n-1
   public int leftPhilosopher(int philosopherNumber) {
     return (philosopherNumber+(n-1)) % n;
   }
 
-  // e.g. {0,1,...,n-1} right(k)->k+1 right(n-1)->0
+  // e.g. {0,1,...,n-1} right(k)->k+1, right(n-1)->0
   public int rightPhilosopher(int philosopherNumber) {
     return (philosopherNumber+1) % n;
   }
@@ -51,17 +51,18 @@ public class Monitor {
   public void picksUpForks(int philosopherNumber) {
 
     lock.lock();
-
+    println("Philosopher", philosopherNumber, "tries to taking forks.");
 
     // test
     // It(philosopherNumber) wants to eating.
     // but it has to wait eating left(right) philosopher.
     status[philosopherNumber] = HUNGRY;
 
-    if(!( status[philosopherNumber] == HUNGRY
-          && status[leftPhilosopher(philosopherNumber)] != EATING
-        && status[rightPhilosopher(philosopherNumber)] != EATING)){
+    if (!( status[philosopherNumber] == HUNGRY
+      && status[leftPhilosopher(philosopherNumber)] != EATING
+      && status[rightPhilosopher(philosopherNumber)] != EATING)) {
       try {
+        println("Philosopher", philosopherNumber, "CANNOT taking forks...");
         conditions[philosopherNumber].await();
       }
       catch(InterruptedException e) {
@@ -69,9 +70,8 @@ public class Monitor {
       }
     }
 
-    status[philosopherNumber] = EATING;
-    println("Philosopher", philosopherNumber, "takes forks.");
     println("Philosopher", philosopherNumber, "is eating.");
+    status[philosopherNumber] = EATING;
 
     lock.unlock();
   }
@@ -79,7 +79,7 @@ public class Monitor {
   public void putsDownForks(int philosopherNumber) {
 
     lock.lock();
-
+    println("Philosopher", philosopherNumber, "is putting down forks.");
 
     // test
     // When this time, left(right) philosopher wants to start eating.
@@ -98,8 +98,6 @@ public class Monitor {
     if (status[right] == HUNGRY && status[right2] != EATING) {
       conditions[right].signal();
     }
-
-    println("Philosopher", philosopherNumber, "is putting down forks.");
 
     lock.unlock();
   }
@@ -151,7 +149,7 @@ void setup() {
     philosophers[i] = new Philosopher(i, monitor);
   }
 
-  // You have to enable this code if you want philosopher' to stop eating in finite-time.
+  // You have to enable under code if you want philosopher' to stop eating in finite-time.
   /*
   for (int i = 0; i < N; i++) {
    try {
