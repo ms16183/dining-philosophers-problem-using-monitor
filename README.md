@@ -29,3 +29,14 @@ Processing(Java)であれば動きます．
 
 pdeファイルをProcessingで開いて実行すると，コンソールに食事の様子が出力されます．
 永遠に続くようにしているので，適宜停止ボタンで処理を停止してください．
+
+Python3バージョンを追加しました．
+
+```
+$ chmod +x monitor.py
+$ ./monitor.py
+```
+
+```
+$ python3 monitor.py
+```
